@@ -22,14 +22,21 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -298,7 +305,72 @@ public class NewActivity extends AppCompatActivity {
             }
             br.close();
             System.out.println(response.toString());
+
+            InputStream stream = new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8));
+
+            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+            XmlPullParser parser = factory.newPullParser();
+
+            // 스트림을 통해 파싱을 한다.
             result = response.toString();
+            parser.setInput(stream,null);
+            int eventType = parser.getEventType();
+
+            ArrayList<String> name_list = new ArrayList<String>();
+            ArrayList<String> phone_list = new ArrayList<String>();
+
+            final int STEP_TITLE = 0;
+            final int STEP_TEL = 1;
+            final int STEP_NONE = 2;
+
+            int step = STEP_NONE;
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if (eventType == XmlPullParser.START_DOCUMENT) {
+                    // XML 데이터 시작
+                } else if (eventType == XmlPullParser.START_TAG) {
+                    String startTag = parser.getName() ;
+                    if (startTag.equals("title")) {
+                        step = STEP_TITLE ;
+                    } else if (startTag.equals("telephone")) {
+                        step = STEP_TEL ;
+                    } else {
+                        step = STEP_NONE ;
+                    }
+                } else if (eventType == XmlPullParser.END_TAG) {
+                    String endTag = parser.getName() ;
+                    if ((endTag.equals("NO") && step != STEP_TITLE) ||
+                            endTag.equals("NAME") && step != STEP_TEL)
+                    {
+                        // TODO : error.
+                    }
+                    step = STEP_NONE ;
+                } else if (eventType == XmlPullParser.TEXT) {
+                    String texts = parser.getText() ;
+                    if (step == STEP_TITLE) {
+                        name_list.add(texts);
+                    } else if (step == STEP_TEL) {
+                        phone_list.add(texts) ;
+                    }
+                }
+
+                eventType = parser.next();
+            }
+
+            StringBuffer str1, str2;
+            str1 = new StringBuffer();
+            str2 = new StringBuffer();
+
+            for(String cur_string : name_list) {
+                str1.append(cur_string + "\n");
+            }
+
+            for(String cur_string : phone_list) {
+                str2.append(cur_string + "\n");
+            }
+
+            result = str1.toString();
+
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -350,4 +422,3 @@ public class NewActivity extends AppCompatActivity {
         super.onDestroy();
     }
 }
-
