@@ -12,6 +12,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -31,6 +32,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class NewActivity extends AppCompatActivity {
 
@@ -148,7 +151,6 @@ public class NewActivity extends AppCompatActivity {
         private ContentValues values;
 
         public NetworkTask(String url, ContentValues values) {
-
             this.url = url;
             this.values = values;
         }
@@ -158,6 +160,8 @@ public class NewActivity extends AppCompatActivity {
 
             String result; // 요청 결과를 저장할 변수.
             RequestHttpURLConnection requestHttpURLConnection = new RequestHttpURLConnection();
+
+            //Toast.makeText(getApplicationContext(), "doinbackground", Toast.LENGTH_LONG).show();
 
             result = getHospitalList(0);
 
@@ -172,7 +176,7 @@ public class NewActivity extends AppCompatActivity {
 
             //doInBackground()로 부터 리턴된 값이 onPostExecute()의 매개변수로 넘어오므로 s를 출력한다.
             test_view_2.setText(s);
-            Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
         }
     }
     private final LocationListener mLocationListener = new LocationListener() {
@@ -180,7 +184,7 @@ public class NewActivity extends AppCompatActivity {
             //여기서 위치값이 갱신되면 이벤트가 발생한다.
             //값은 Location 형태로 리턴되며 좌표 출력 방법은 다음과 같다.
 
-            Toast.makeText(getApplicationContext(), "onlocationChange", Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), "onlocationChange", Toast.LENGTH_LONG).show();
 
             Log.d("test", "onLocationChanged, location:" + location);
             double longitude = location.getLongitude(); //경도
@@ -217,7 +221,7 @@ public class NewActivity extends AppCompatActivity {
             String str = "위치정보 : " + provider + "\n위도 : " + longitude + "\n경도 : " + latitude
                     + "\n고도 : " + altitude + "\n정확도 : " + accuracy
                     +"\n주소 : " + list.get(0).getAddressLine(0);
-            Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), str, Toast.LENGTH_LONG).show();
 
             ContentValues cv = new ContentValues();
             cv.put("X-Naver-Client-Id",naverClientID);
@@ -253,7 +257,8 @@ public class NewActivity extends AppCompatActivity {
                 )
         {
             // Should we show an explanation?
-            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION))
+            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) ||
+                    shouldShowRequestPermissionRationale(Manifest.permission.INTERNET))
             {
                 // ...
             }
@@ -318,51 +323,31 @@ public class NewActivity extends AppCompatActivity {
         test_view_2 = (TextView)findViewById(R.id.test_view_2);
 
         checkVerify();
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
 
         // LocationManager 객체를 얻어온다
         final LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Toast.makeText(getApplicationContext(), "수신중...", Toast.LENGTH_LONG).show();
-        /*try {
-            lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, // 등록할 위치제공자
-                    100, // 통지사이의 최소 시간간격 (miliSecond)
-                    1, // 통지사이의 최소 변경거리 (m)
-                    mLocationListener);
+        //Toast.makeText(getApplicationContext(), "수신중...", Toast.LENGTH_LONG).show();
+
+        test_view.setText("수신중..");
+        // GPS 제공자의 정보가 바뀌면 콜백하도록 리스너 등록하기~!!!
+        try {
             lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, // 등록할 위치제공자
                     100, // 통지사이의 최소 시간간격 (miliSecond)
                     1, // 통지사이의 최소 변경거리 (m)
                     mLocationListener);
         } catch (SecurityException e) {
             e.printStackTrace();
-        }*/
-
-        tb.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    if (tb.isChecked()) {
-                        test_view.setText("수신중..");
-                        // GPS 제공자의 정보가 바뀌면 콜백하도록 리스너 등록하기~!!!
-                        lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, // 등록할 위치제공자
-                                100, // 통지사이의 최소 시간간격 (miliSecond)
-                                1, // 통지사이의 최소 변경거리 (m)
-                                mLocationListener);
-                        lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, // 등록할 위치제공자
-                                100, // 통지사이의 최소 시간간격 (miliSecond)
-                                1, // 통지사이의 최소 변경거리 (m)
-                                mLocationListener);
-                    } else {
-                        test_view.setText("위치정보 미수신중");
-                        lm.removeUpdates(mLocationListener);  //  미수신할때는 반드시 자원해체를 해주어야 한다.
-                    }
-                } catch (SecurityException ex) {
-                }
-            }
-        });
+        }
     }
+
     @Override
     public void onDestroy(){
         super.onDestroy();
-
     }
 }
 
